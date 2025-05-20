@@ -1,6 +1,6 @@
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -14,42 +14,43 @@ import {
   Keyboard,
 } from 'react-native';
 import {HomeStackParamList} from '../../navigations/HomeStack';
+import {fetchDataHotelsFind} from '../../services/hotelService';
 
-const hotels = [
-  {
-    id: '1',
-    name: 'Paradise Grand Hotel',
-    rating: 5,
-    score: 10,
-    review: 'Xuất sắc',
-    reviewsCount: 3,
-    address: 'Tại trung tâm thành phố',
-    price: 720000,
-    originalPrice: 2250000,
-    breakfast: true,
-    freeCancel: true,
-    payLater: true,
-    image:
-      'https://cf.bstatic.com/xdata/images/hotel/square600/678852673.webp?k=adde50956f9fbab0b9796b550e895f329cfc974fa77e1f9fde840f3898c47441&o=',
-  },
-  {
-    id: '2',
-    name: 'Dusit Le Palais Tu Hoa Hanoi',
-    rating: 5,
-    score: null,
-    review: null,
-    reviewsCount: 0,
-    address: 'Quận Tây Hồ • cách trung tâm 6,4km',
-    price: 3555000,
-    originalPrice: 3950000,
-    breakfast: false,
-    freeCancel: true,
-    payLater: true,
-    image:
-      'https://cf.bstatic.com/xdata/images/hotel/square600/680981331.webp?k=cc2b1682a7b891814371f16937df18d8c05df0a9ec7cd1c68046be244857e334&o=',
-  },
-  // Thêm nhiều khách sạn khác...
-];
+// const hotels = [
+//   {
+//     id: '1',
+//     name: 'Paradise Grand Hotel',
+//     rating: 5,
+//     score: 10,
+//     review: 'Xuất sắc',
+//     reviewsCount: 3,
+//     address: 'Tại trung tâm thành phố',
+//     price: 720000,
+//     originalPrice: 2250000,
+//     breakfast: true,
+//     freeCancel: true,
+//     payLater: true,
+//     image:
+//       'https://cf.bstatic.com/xdata/images/hotel/square600/678852673.webp?k=adde50956f9fbab0b9796b550e895f329cfc974fa77e1f9fde840f3898c47441&o=',
+//   },
+//   {
+//     id: '2',
+//     name: 'Dusit Le Palais Tu Hoa Hanoi',
+//     rating: 5,
+//     score: null,
+//     review: null,
+//     reviewsCount: 0,
+//     address: 'Quận Tây Hồ • cách trung tâm 6,4km',
+//     price: 3555000,
+//     originalPrice: 3950000,
+//     breakfast: false,
+//     freeCancel: true,
+//     payLater: true,
+//     image:
+//       'https://cf.bstatic.com/xdata/images/hotel/square600/680981331.webp?k=cc2b1682a7b891814371f16937df18d8c05df0a9ec7cd1c68046be244857e334&o=',
+//   },
+//   // Thêm nhiều khách sạn khác...
+// ];
 
 export default function HotelListScreen() {
   const navigation = useNavigation<StackNavigationProp<HomeStackParamList>>();
@@ -61,9 +62,23 @@ export default function HotelListScreen() {
     freeCancel: false,
     payLater: false,
   });
-
+  const route = useRoute();
+  const {bookingParams} = route.params;
   const [sortType, setSortType] = useState<'none' | 'asc' | 'desc'>('none');
+  const [hotels, SetHotels] = useState<any[]>([]);
+  console.log(bookingParams);
 
+  useEffect(() => {
+    const loadHotels = async () => {
+      const dataHotel = await fetchDataHotelsFind({
+        location: bookingParams.location,
+        classify: bookingParams.classify,
+      });
+      SetHotels(dataHotel);
+      console.log(dataHotel);
+    };
+    loadHotels();
+  }, []);
   // Lọc dữ liệu
   let filteredHotels = hotels.filter(h => {
     if (filters.breakfast && !h.breakfast) return false;
@@ -83,31 +98,37 @@ export default function HotelListScreen() {
     return '★'.repeat(count) + '☆'.repeat(5 - count);
   };
 
-  const renderItem = ({item}: any) => (
-    <View style={styles.card}>
-      <Image source={{uri: item.image}} style={styles.image} />
+  const renderItem = ({item: hotel}: {item: any}) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => {
+        console.log('item');
+        console.log(hotel);
+        navigation.navigate('Detail', {hotel});
+      }}>
+      <Image source={hotel.image} style={styles.image} />
       <View style={styles.cardBody}>
         <View style={styles.headerRow}>
-          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.name}>{hotel.name}</Text>
           <View style={styles.ratingBox}>
-            <Text style={styles.ratingText}>{renderStars(item.rating)}</Text>
+            <Text style={styles.ratingText}>{renderStars(hotel.ranking)}</Text>
           </View>
         </View>
-        {item.review && (
+        {hotel.review && (
           <Text style={styles.review}>
-            {item.review} ({item.reviewsCount} đánh giá)
+            {hotel.review} ({hotel.reviewsCount} đánh giá)
           </Text>
         )}
-        <Text style={styles.address}>{item.address}</Text>
+        <Text style={styles.address}>{hotel.address}</Text>
         <View style={styles.priceRow}>
           <Text style={styles.originalPrice}>
-            {item.originalPrice.toLocaleString('vi-VN', {
+            {hotel.originalPrice.toLocaleString('vi-VN', {
               style: 'currency',
               currency: 'VND',
             })}
           </Text>
           <Text style={styles.price}>
-            {item.price.toLocaleString('vi-VN', {
+            {hotel.price.toLocaleString('vi-VN', {
               style: 'currency',
               currency: 'VND',
             })}
@@ -115,12 +136,12 @@ export default function HotelListScreen() {
         </View>
         <Text style={styles.taxNote}>Đã bao gồm thuế và phí</Text>
         <View style={styles.tagsRow}>
-          {item.breakfast && <Tag text="Bao gồm bữa sáng" />}
-          {item.freeCancel && <Tag text="Hủy miễn phí" />}
-          {item.payLater && <Tag text="Thanh toán sau" />}
+          {hotel.breakfast && <Tag text="Bao gồm bữa sáng" />}
+          {hotel.freeCancel && <Tag text="Hủy miễn phí" />}
+          {hotel.payLater && <Tag text="Thanh toán sau" />}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const Tag = ({text}: {text: string}) => (
@@ -167,7 +188,7 @@ export default function HotelListScreen() {
       {/* Danh sách khách sạn */}
       <FlatList
         data={filteredHotels}
-        keyExtractor={item => item.id}
+        keyExtractor={hotel => hotel.id}
         renderItem={renderItem}
         contentContainerStyle={{paddingHorizontal: 16, paddingBottom: 24}}
         showsVerticalScrollIndicator={false}

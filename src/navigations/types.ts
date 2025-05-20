@@ -7,6 +7,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 export type AuthStackParamList = {
   Login: undefined; // Màn hình Login không nhận tham số ban đầu
   Register: undefined; // Màn hình Register không nhận tham số ban đầu
+  Home: undefined;
+  Detail: undefined;
 };
 
 // Định nghĩa kiểu cho App Tabs (tương tự RootTabParamList trước đó)
@@ -25,11 +27,11 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>; // Route 'Auth' trỏ đến AuthStack
   App: NavigatorScreenParams<AppTabsParamList>;   // Route 'App' trỏ đến AppTabs
 };
-
-
 // Các loại Props cho từng màn hình, dùng khi khai báo component
 export type LoginScreenProps = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 export type RegisterScreenProps = NativeStackScreenProps<AuthStackParamList, 'Register'>;
+export type HomeScreenProps = NativeStackScreenProps<AuthStackParamList, 'Home'>;
+export type DetailScreenProps = NativeStackScreenProps<AuthStackParamList, 'Detail'>;
 
 // Ví dụ kiểu Props cho màn hình trong App Tabs (ProfileScreen nằm trong Tab)
 export type ProfileScreenProps = CompositeScreenProps<

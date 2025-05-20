@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
 
-type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
+type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'w_f_confirmation';
 
 type RouteParams = {
   params: {
@@ -31,6 +31,15 @@ const StatusScreen = () => {
       location: 'Hà Nội',
       price: '1.200.000đ',
       status: 'pending',
+      image:
+        'https://ik.imagekit.io/tvlk/blog/2017/06/kham-pha-cac-dia-diem-du-lich-o-ha-noi-ma-ban-khong-the-bo-qua-5.jpg',
+    },
+    {
+      id: '1',
+      name: 'Khách sạn A',
+      location: 'Hà Nội',
+      price: '1.200.000đ',
+      status: 'w_f_confirmation',
       image:
         'https://ik.imagekit.io/tvlk/blog/2017/06/kham-pha-cac-dia-diem-du-lich-o-ha-noi-ma-ban-khong-the-bo-qua-5.jpg',
     },
@@ -101,14 +110,20 @@ const StatusScreen = () => {
               </Text>
 
               {/* Hiển thị nút phù hợp */}
-              {item.status === 'pending' && (
+              {item.status === 'w_f_confirmation' && (
                 <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={() => handleCancel(item.name)}>
                   <Text style={styles.buttonText}>Hủy đặt phòng</Text>
                 </TouchableOpacity>
               )}
-
+              {item.status === 'confirmed' && (
+                <TouchableOpacity
+                  style={styles.rebookButton}
+                  onPress={() => handleRebook(item.name)}>
+                  <Text style={styles.buttonText}>Đặt lại</Text>
+                </TouchableOpacity>
+              )}
               {item.status === 'cancelled' && (
                 <TouchableOpacity
                   style={styles.rebookButton}
@@ -117,7 +132,7 @@ const StatusScreen = () => {
                 </TouchableOpacity>
               )}
 
-              {item.status === 'confirmed' && (
+              {item.status === 'pending' && (
                 <TouchableOpacity style={[styles.disabledButton]} disabled>
                   <Text style={styles.buttonText}>Đã xác nhận</Text>
                 </TouchableOpacity>

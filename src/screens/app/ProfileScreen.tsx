@@ -357,6 +357,14 @@ const ProfileScreen: React.FC = () => {
           sub="Thêm hoặc quản lý các thẻ đã lưu"
         />
 
+        <Text style={styles.sectionTitle}>Bộ sưu tập</Text>
+        <Item
+          icon="albums-outline"
+          label="Đã lưu"
+          sub="Thêm hoặc quản lý các thẻ đã lưu"
+          onPress={() => navigation.navigate('library')}
+        />
+
         <Text style={styles.sectionTitle}>Phần thưởng của tôi</Text>
         <Item
           icon="cash-outline"

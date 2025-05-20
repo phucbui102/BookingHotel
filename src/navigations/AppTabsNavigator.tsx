@@ -2,12 +2,14 @@
 // AppTabsNavigator.tsx
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-
+// import Ionicons from 'react-native-vector-icons/Ionicons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import HomeStack from './HomeStack';
 import SavedScreen from '../screens/app/SavedScreen';
 import ProfileStack from './ProfileStack'; // Import ProfileStack
 import StatusScreen from './StatusTabs';
+import BookingStack from './BookingStack';
+
 const Tab = createBottomTabNavigator();
 
 const AppTabsNavigator = () => {
@@ -19,7 +21,17 @@ const AppTabsNavigator = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({color, size}) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <FontAwesome name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Booking"
+        component={BookingStack}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({color, size}) => (
+            <FontAwesome name="clipboard" size={size} color={color} />
           ),
         }}
       />
@@ -29,7 +41,7 @@ const AppTabsNavigator = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({color, size}) => (
-            <Ionicons name="bookmark-outline" size={size} color={color} />
+            <FontAwesome name="bookmark" size={size} color={color} />
           ),
         }}
       />
@@ -39,7 +51,7 @@ const AppTabsNavigator = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({color, size}) => (
-            <Ionicons name="cloudy-night-outline" size={size} color={color} />
+            <FontAwesome name="star" size={size} color={color} />
           ),
         }}
       />
@@ -49,7 +61,7 @@ const AppTabsNavigator = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({color, size}) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <FontAwesome name="user-circle" size={size} color={color} />
           ),
         }}
       />

@@ -9,6 +9,11 @@ const BookingTabs = () => {
   return (
     <TopTab.Navigator>
       <TopTab.Screen
+        name="Chờ xác nhận"
+        component={StatusScreen}
+        initialParams={{status: 'w_f_confirmation'}}
+      />
+      <TopTab.Screen
         name="Đang đặt"
         component={StatusScreen}
         initialParams={{status: 'pending'}}

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import MapView, {Marker} from 'react-native-maps';
 import {
   View,
@@ -8,8 +8,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Button,
-  Platform,
   Pressable,
   FlatList,
 } from 'react-native';
@@ -17,9 +15,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {HomeStackParamList} from '../../navigations/HomeStack';
-//data tạo danh sách theo tag
+// import firestore from '@react-native-firebase/firestore';
+import {fetchHotels} from '../../services/hotelService';
+
+// Danh mục hiển thị
 const categories = [
-  'Thành phố',
+  'Tất cả',
+  'Thành Phố',
   'Bãi biển',
   'Thiên nhiên',
   'Thư giãn',
@@ -27,33 +29,7 @@ const categories = [
   'Ẩm thực',
 ];
 
-const data = [
-  {
-    id: '1',
-    name: 'Hà Nội',
-    image: require('../../../assets/logo.png'),
-    distance: 'Cách đây 1,2 km',
-    tags: ['thành phố'],
-  },
-  {
-    id: '2',
-    name: 'Lào Cai',
-    image: require('../../../assets/logo.png'),
-    distance: 'Cách đây 255 km',
-    tags: ['thiên nhiên', 'rừng'],
-  },
-  {
-    id: '3',
-    name: 'Đà Nẵng',
-    image: require('../../../assets/logo.png'),
-    distance: 'Cách đây 605 km',
-    tags: ['bãi biển', 'thành phố'],
-  },
-  // Thêm dữ liệu khác tương tự...
-];
-
-// hết
-
+// Điểm đến phổ biến
 const popularDestinations = [
   {
     name: 'Hà Nội',
@@ -68,44 +44,41 @@ const popularDestinations = [
   {
     name: 'Đà Nẵng',
     image:
-      'https://vietluxtour.com/Upload/images/2024/khamphatrongnuoc/%C4%91%E1%BB%8Ba%20%C4%91i%E1%BB%83m%20du%20l%E1%BB%8Bch%20%C4%91%C3%A0%20n%E1%BA%B5ng/dia-diem-du-lich-da-nang%20(9)-min.jpg',
+      'https://vietluxtour.com/Upload/images/2024/khamphatrongnuoc/dia-diem-du-lich-da-nang%20(9)-min.jpg',
   },
 ];
 
-const featuredHotels = [
-  {
-    name: 'Khách sạn Melia',
-    location: 'Hà Nội',
-    image: 'https://dam.melia.com/melia/file/3ntidp7ept3oCjNncLqX.jpg',
-    price: '1.200.000đ/đêm',
-    latitude: 21.028511,
-    longitude: 105.804817,
-  },
-  {
-    name: 'Novotel Đà Nẵng',
-    location: 'Đà Nẵng',
-    image:
-      'https://d2e5ushqwiltxm.cloudfront.net/wp-content/uploads/sites/72/2025/05/05150616/Novotel-Ariel_2.jpg',
-    price: '1.500.000đ/đêm',
-    latitude: 16.054407,
-    longitude: 108.202167,
-  },
-];
+// Danh sách khách sạn nổi bật có thông tin map
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<HomeStackParamList>>();
-  const [checkIn, setCheckIn] = useState(new Date());
-  const [checkOut, setCheckOut] = useState(new Date());
-  const [showCheckInPicker, setShowCheckInPicker] = useState(false);
-  const [showCheckOutPicker, setShowCheckOutPicker] = useState(false);
+  const [hotels, setHotels] = useState<any[]>([]);
+  const [featuredHotels, setFeaturedHotels] = useState<any[]>([]);
+  const [NearbyHotels, setNearbyHotels] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
 
-  // code tạo danh sách dựa trên tags
-  const [selectedCategory, setSelectedCategory] = useState('Ẩm thực');
+  useEffect(() => {
+    const loadHotels = async () => {
+      const dataHotel = await fetchHotels();
+      setHotels(dataHotel);
+      // lấy danh sách khách sạn nổi bật
+      const datafeaturedHotels = await fetchHotels({featuredHotels: true});
+      setFeaturedHotels(datafeaturedHotels);
 
-  const filteredData = data.filter(item =>
-    item.tags.includes(selectedCategory.toLowerCase()),
+      // lấy danh sách khách sạn ở gần
+      const dataNearbyHotels = await fetchHotels({location: 'Đà Nẵng'});
+      setNearbyHotels(dataNearbyHotels);
+    };
+
+    loadHotels();
+  }, []);
+
+  const filteredData = hotels.filter(hotel =>
+    hotel.tags.some(
+      (tag: string) => tag.toLowerCase() === selectedCategory.toLowerCase(),
+    ),
   );
-  // hết
+
   return (
     <ScrollView style={styles.container}>
       {/* Banner */}
@@ -116,16 +89,14 @@ const HomeScreen: React.FC = () => {
         style={styles.banner}
       />
 
-      {/* Tìm kiếm + ngày nhận/trả phòng */}
+      {/* Ô tìm kiếm */}
       <Pressable
         style={styles.searchInput}
         onPress={() => navigation.navigate('HotelSearch')}>
         <Text style={{color: '#999'}}>Tìm kiếm khách sạn, địa điểm...</Text>
       </Pressable>
 
-      {/* code giao diện hiện đieạ điểm theo tags */}
-
-      {/* Danh mục */}
+      {/* Danh mục theo tag */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -160,47 +131,10 @@ const HomeScreen: React.FC = () => {
           <View style={styles.card}>
             <Image source={item.image} style={styles.image} />
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.distance}>{item.distance}</Text>
+            <Text style={styles.distance}>{item.price}</Text>
           </View>
         )}
       />
-
-      {/* hết */}
-
-      <View style={styles.dateContainer}>
-        <TouchableOpacity
-          onPress={() => setShowCheckInPicker(true)}
-          style={styles.dateBox}>
-          <Text>Nhận phòng: {checkIn.toLocaleDateString()}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setShowCheckOutPicker(true)}
-          style={styles.dateBox}>
-          <Text>Trả phòng: {checkOut.toLocaleDateString()}</Text>
-        </TouchableOpacity>
-      </View>
-      {showCheckInPicker && (
-        <DateTimePicker
-          value={checkIn}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowCheckInPicker(false);
-            if (selectedDate) setCheckIn(selectedDate);
-          }}
-        />
-      )}
-      {showCheckOutPicker && (
-        <DateTimePicker
-          value={checkOut}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowCheckOutPicker(false);
-            if (selectedDate) setCheckOut(selectedDate);
-          }}
-        />
-      )}
 
       {/* Điểm đến phổ biến */}
       <Text style={styles.sectionTitle}>Điểm đến phổ biến</Text>
@@ -216,28 +150,27 @@ const HomeScreen: React.FC = () => {
       {/* Khách sạn nổi bật */}
       <Text style={styles.sectionTitle}>Khách sạn nổi bật</Text>
       {featuredHotels.map((hotel, index) => (
-        <View key={index} style={styles.hotelCard}>
-          <Image source={{uri: hotel.image}} style={styles.hotelImage} />
+        <TouchableOpacity
+          key={index}
+          onPress={() => navigation.navigate('Detail', {hotel})}
+          style={styles.hotelCard}>
+          <Image source={hotel.image} style={styles.hotelImage} />
           <View style={styles.hotelInfo}>
             <Text style={styles.hotelName}>{hotel.name}</Text>
             <Text>{hotel.location}</Text>
             <Text style={styles.hotelPrice}>{hotel.price}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
 
       {/* Dịch vụ phổ biến */}
       <Text style={styles.sectionTitle}>Dịch vụ phổ biến</Text>
       <View style={styles.serviceContainer}>
-        <View style={styles.serviceBox}>
-          <Text>🏊 Hồ bơi</Text>
-        </View>
-        <View style={styles.serviceBox}>
-          <Text>🍽 Ăn sáng</Text>
-        </View>
-        <View style={styles.serviceBox}>
-          <Text>🏋️ Gym</Text>
-        </View>
+        {['🏊 Hồ bơi', '🍽 Ăn sáng', '🏋️ Gym'].map((service, idx) => (
+          <View key={idx} style={styles.serviceBox}>
+            <Text>{service}</Text>
+          </View>
+        ))}
       </View>
 
       {/* Đánh giá gần đây */}
@@ -253,28 +186,21 @@ const HomeScreen: React.FC = () => {
         <Text>📍 Bạn đang ở gần Hà Nội, xem các khách sạn phù hợp!</Text>
       </View>
 
-      {/* Giả lập thanh điều hướng
-      <View style={styles.bottomNav}>
-        <Text style={styles.navItem}>🏠 Trang chủ</Text>
-        <Text style={styles.navItem}>🔍 Tìm kiếm</Text>
-        <Text style={styles.navItem}>❤️ Ưa thích</Text>
-        <Text style={styles.navItem}>👤 Hồ sơ</Text>
-      </View> */}
+      {/* Bản đồ */}
       <Text style={styles.sectionTitle}>Bản đồ khách sạn</Text>
       {/* <MapView
         style={styles.map}
         initialRegion={{
-          latitude: featuredHotels[0].latitude,
-          longitude: featuredHotels[0].longitude,
+          latitude: NearbyHotels[0].latitude,
+          longitude: NearbyHotels[0].longitude,
           latitudeDelta: 10,
           longitudeDelta: 10,
-        }}
-      >
-        {featuredHotels.map((hotel, index) => (
+        }}>
+        {NearbyHotels.map((hotel, index) => (
           <Marker
             key={index}
-            coordinate={{ latitude: hotel.latitude, longitude: hotel.longitude }}
-            title={hotel.name}
+            coordinate={{latitude: hotel.latitude, longitude: hotel.longitude}}
+            title={hotel.Name}
             description={hotel.location}
           />
         ))}
@@ -284,12 +210,6 @@ const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  map: {
-    width: '100%',
-    height: 300,
-    borderRadius: 10,
-    marginBottom: 30,
-  },
   container: {
     backgroundColor: '#fff',
     padding: 16,
@@ -307,32 +227,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
-  dateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  dateBox: {
-    flex: 1,
-    backgroundColor: '#e1e1e1',
-    padding: 10,
-    borderRadius: 10,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginVertical: 10,
-  },
-  destinationCard: {
-    marginRight: 12,
-    alignItems: 'center',
-  },
-  destinationImage: {
-    width: 120,
-    height: 80,
-    borderRadius: 10,
   },
   categoryList: {
     paddingHorizontal: 10,
@@ -358,6 +256,7 @@ const styles = StyleSheet.create({
   },
   cardList: {
     paddingLeft: 10,
+    marginBottom: 10,
   },
   card: {
     width: 140,
@@ -374,6 +273,15 @@ const styles = StyleSheet.create({
   },
   distance: {
     color: '#777',
+  },
+  destinationCard: {
+    marginRight: 12,
+    alignItems: 'center',
+  },
+  destinationImage: {
+    width: 120,
+    height: 80,
+    borderRadius: 10,
   },
   destinationName: {
     marginTop: 5,
@@ -426,16 +334,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 40,
   },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-    paddingVertical: 12,
-    backgroundColor: '#f8f8f8',
-  },
-  navItem: {
-    fontSize: 14,
+  map: {
+    width: '100%',
+    height: 300,
+    borderRadius: 10,
+    marginBottom: 30,
   },
 });
 
