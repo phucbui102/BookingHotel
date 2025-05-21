@@ -6,6 +6,8 @@ import HotelSearchScreen from '../screens/Search/HotelSearchScreen';
 import HotelListScreen from '../screens/Search/HotelListScreen';
 import HomeScreen from '../screens/app/HomeScreen';
 import DetailScreen from '../screens/Booking/DetailScreen';
+import PaymentScreen from '../screens/pay/PaymentScreen';
+import StatusScreen from '../screens/app/StatusScreen';
 import {useAuth} from '../context/AuthContext'; // Dùng AuthContext
 
 export type HomeStackParamList = {
@@ -15,6 +17,8 @@ export type HomeStackParamList = {
   HotelSearch: undefined;
   HotelList: undefined;
   Detail: undefined;
+  Payment: undefined;
+  Status: undefined;
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -38,6 +42,7 @@ const ProfileStack: React.FC = () => {
         component={HomeScreen}
         options={{headerShown: false}}
       />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="Message" component={MessageScreen} />
       <Stack.Screen name="HotelSearch" component={HotelSearchScreen} />
       <Stack.Screen
@@ -47,6 +52,7 @@ const ProfileStack: React.FC = () => {
       />
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="ProvinceSearch" component={ProvinceSearchScreen} />
+      {/* <Stack.Screen name="Status" component={StatusScreen} /> */}
     </Stack.Navigator>
   );
 };

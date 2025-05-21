@@ -1,9 +1,10 @@
 import firestore from '@react-native-firebase/firestore';
-
+import auth from '@react-native-firebase/auth';
 interface HotelFilter {
   minPrice?: number;
   featuredHotels?: boolean;
   location?: string;
+  hotelId?:string;
 }
 
 interface findHotelFilter {
@@ -20,17 +21,38 @@ interface AddCommentInput {
 // lấy dữ liệu của hotel
 export const fetchHotels = async (filter?: HotelFilter) => {
   try {
+    // Nếu có hotelId, lấy trực tiếp document đó
+    if (filter?.hotelId) {
+      const doc = await firestore().collection('datahotel').doc(filter.hotelId).get();
+
+      if (!doc.exists) return [];
+
+      const data = doc.data();
+      return [{
+        id: doc.id,
+        name: data?.name || 'Chưa rõ tên',
+        image: { uri: data?.image || '' },
+        description: data?.description || 'Không có mô tả',
+        tags: data?.tags || [],
+        location: data?.location || 'Không xác định',
+        price: data?.price || 0,
+        latitude: data?.latitude,
+        longitude: data?.longitude
+      }];
+    }
+
+    // Nếu không có hotelId, lọc theo điều kiện khác
     let query = firestore().collection('datahotel');
 
-    // Áp dụng các bộ lọc nếu có
     if (filter?.minPrice !== undefined) {
       query = query.where('price', '>', filter.minPrice);
     }
-
+    if (filter?.userId !== undefined) {
+      query = query.where('userId', '==', filter.userId);
+    }
     if (filter?.featuredHotels !== undefined) {
       query = query.where('featuredHotels', '==', filter.featuredHotels);
     }
-
     if (filter?.location) {
       query = query.where('location', '==', filter.location);
     }
@@ -58,6 +80,7 @@ export const fetchHotels = async (filter?: HotelFilter) => {
     return [];
   }
 };
+
 
 
 // lấy dữ liệu của comment
@@ -204,3 +227,39 @@ export const fetchDataHotelsFind = async (filter?: findHotelFilter) => {
     return [];
   }
 };
+
+// lấy danh sách trong booking
+export const fetchBookings = async () => {
+  try {
+    const user = auth().currentUser;
+    if (!user) {
+      throw new Error('Người dùng chưa đăng nhập');
+    }
+
+    const userId = user.uid;
+
+    // Truy vấn các bookings mà userId khớp với người dùng hiện tại
+    const snapshot = await firestore()
+      .collection('bookings')
+      .where('userId', '==', userId)
+      .get();
+
+    const list = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        status: data.status,
+        hotelId: data.hotelId,
+        // thêm các trường khác nếu cần, ví dụ:
+        // checkIn: data.checkIn,
+        // checkOut: data.checkOut,
+      };
+    });
+
+    return list;
+  } catch (err) {
+    console.error('Lỗi khi lấy danh sách bookings theo người dùng:', err);
+    return [];
+  }
+};
+

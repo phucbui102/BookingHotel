@@ -1,11 +1,12 @@
 // BookingTabs.tsx
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
 import StatusScreen from './../screens/app/StatusScreen';
+import {fetchBookings, fetchHotels} from '../services/hotelService';
 
 const TopTab = createMaterialTopTabNavigator();
 
-const BookingTabs = () => {
+const BookingTabs = ({route, navigation}) => {
   return (
     <TopTab.Navigator>
       <TopTab.Screen

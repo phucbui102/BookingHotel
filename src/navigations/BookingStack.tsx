@@ -39,6 +39,7 @@ const ProfileStack: React.FC = () => {
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="Message" component={MessageScreen} />
       <Stack.Screen name="HotelSearch" component={HotelSearchScreen} />
+
       <Stack.Screen
         name="HotelList"
         component={HotelListScreen}

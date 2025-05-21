@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
+import {fetchBookings, fetchHotels} from '../../services/hotelService';
 
 type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'w_f_confirmation';
 
@@ -24,117 +25,115 @@ const StatusScreen = () => {
   const navigation = useNavigation();
   const {status} = route.params;
 
-  const mockData = [
-    {
-      id: '1',
-      name: 'Khách sạn A',
-      location: 'Hà Nội',
-      price: '1.200.000đ',
-      status: 'pending',
-      image:
-        'https://ik.imagekit.io/tvlk/blog/2017/06/kham-pha-cac-dia-diem-du-lich-o-ha-noi-ma-ban-khong-the-bo-qua-5.jpg',
-    },
-    {
-      id: '1',
-      name: 'Khách sạn A',
-      location: 'Hà Nội',
-      price: '1.200.000đ',
-      status: 'w_f_confirmation',
-      image:
-        'https://ik.imagekit.io/tvlk/blog/2017/06/kham-pha-cac-dia-diem-du-lich-o-ha-noi-ma-ban-khong-the-bo-qua-5.jpg',
-    },
-    {
-      id: '1',
-      name: 'Khách sạn AA',
-      location: 'Bình Dương',
-      price: '1.200.000đ',
-      status: 'pending',
-      image:
-        'https://cf.bstatic.com/xdata/images/hotel/max1280x900/683297972.jpg?k=be7214247a6e454bec3575587552a9e2fe4e9c64d07e808f286681f28459ff82&o=&hp=1',
-    },
-    {
-      id: '2',
-      name: 'Khách sạn B',
-      location: 'TP. Hồ Chí Minh',
-      price: '1.500.000đ/đêm',
-      status: 'confirmed',
-      image:
-        'https://ik.imagekit.io/tvlk/blog/2017/06/kham-pha-cac-dia-diem-du-lich-o-ha-noi-ma-ban-khong-the-bo-qua-5.jpg',
-    },
-    {
-      id: '3',
-      name: 'Khách sạn C',
-      location: 'Đà Nẵng',
-      price: '980.000đ/đêm',
-      status: 'cancelled',
-      image:
-        'https://ik.imagekit.io/tvlk/blog/2017/06/kham-pha-cac-dia-diem-du-lich-o-ha-noi-ma-ban-khong-the-bo-qua-5.jpg',
-    },
-  ];
+  const [bookingsWithHotels, setBookingsWithHotels] = useState<any[]>([]);
 
-  const filteredData = mockData.filter(item => item.status === status);
+  useEffect(() => {
+    const load = async () => {
+      const bookings = await fetchBookings();
+
+      const hotelDataArray = await Promise.all(
+        bookings.map(booking => fetchHotels({hotelId: booking.hotelId})),
+      );
+
+      const flatHotels = hotelDataArray.flat();
+
+      const combined = bookings.map((booking, index) => ({
+        ...booking,
+        hotel: flatHotels[index] || null,
+      }));
+
+      setBookingsWithHotels(combined);
+    };
+
+    load();
+  }, []);
+
+  const filteredData = bookingsWithHotels.filter(
+    item => item.status === status,
+  );
 
   const handleCancel = (name: string) => {
     Alert.alert('Hủy đặt phòng', `Bạn đã hủy phòng tại ${name}`);
-    // TODO: gọi API hoặc cập nhật lại danh sách
+    // TODO: Gọi API hủy phòng ở đây
   };
 
   const handleRebook = (name: string) => {
     Alert.alert('Đặt lại', `Bạn muốn đặt lại phòng tại ${name}`);
-    // TODO: điều hướng sang màn hình chi tiết đặt phòng
-    // navigation.navigate('BookingDetailScreen', { hotelId: item.id });
+    // TODO: Điều hướng đến màn hình đặt phòng
+    // navigation.navigate('BookingDetailScreen', { hotelId: ... });
+  };
+
+  const getStatusLabel = (status: BookingStatus) => {
+    switch (status) {
+      case 'pending':
+        return 'Đang đặt';
+      case 'confirmed':
+        return 'Đã xác nhận';
+      case 'cancelled':
+        return 'Đã hủy';
+      case 'w_f_confirmation':
+        return 'Đợi xác nhận';
+      default:
+        return '';
+    }
+  };
+
+  const getStatusStyle = (status: BookingStatus) => {
+    switch (status) {
+      case 'pending':
+        return {color: '#FFA500'};
+      case 'confirmed':
+        return {color: '#4CAF50'};
+      case 'cancelled':
+        return {color: '#F44336'};
+      default:
+        return {color: '#999'};
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* <Text style={styles.header}>
-        {status === 'pending'
-          ? 'Đang chờ xác nhận'
-          : status === 'confirmed'
-          ? 'Đã đặt'
-          : 'Đã hủy'}
-      </Text> */}
-
       <FlatList
         data={filteredData}
         keyExtractor={item => item.id}
         renderItem={({item}) => (
           <View style={styles.card}>
-            <Image source={{uri: item.image}} style={styles.hotelImage} />
+            <Image
+              source={{
+                uri:
+                  item.hotel?.image?.uri ||
+                  'https://via.placeholder.com/300x180?text=No+Image',
+              }}
+              style={styles.hotelImage}
+            />
             <View style={styles.infoContainer}>
-              <Text style={styles.hotelName}>{item.name}</Text>
-              <Text style={styles.location}>{item.location}</Text>
-              <Text style={styles.price}>{item.price}</Text>
+              <Text style={styles.hotelName}>
+                {item.hotel?.name || 'Không rõ tên'}
+              </Text>
+              <Text style={styles.location}>
+                {item.hotel?.location || 'Không rõ địa điểm'}
+              </Text>
+              <Text style={styles.price}>
+                {item.hotel?.price
+                  ? `${item.hotel.price.toLocaleString('vi-VN')}đ/đêm`
+                  : 'Giá không rõ'}
+              </Text>
               <Text style={[styles.status, getStatusStyle(item.status)]}>
                 {getStatusLabel(item.status)}
               </Text>
 
-              {/* Hiển thị nút phù hợp */}
               {item.status === 'w_f_confirmation' && (
                 <TouchableOpacity
                   style={styles.cancelButton}
-                  onPress={() => handleCancel(item.name)}>
+                  onPress={() => handleCancel(item.hotel?.name || '')}>
                   <Text style={styles.buttonText}>Hủy đặt phòng</Text>
                 </TouchableOpacity>
               )}
-              {item.status === 'confirmed' && (
+              {['confirmed', 'cancelled'].includes(item.status) && (
                 <TouchableOpacity
                   style={styles.rebookButton}
-                  onPress={() => handleRebook(item.name)}>
+                  onPress={() => handleRebook(item.hotel?.name || '')}>
                   <Text style={styles.buttonText}>Đặt lại</Text>
-                </TouchableOpacity>
-              )}
-              {item.status === 'cancelled' && (
-                <TouchableOpacity
-                  style={styles.rebookButton}
-                  onPress={() => handleRebook(item.name)}>
-                  <Text style={styles.buttonText}>Đặt lại</Text>
-                </TouchableOpacity>
-              )}
-
-              {item.status === 'pending' && (
-                <TouchableOpacity style={[styles.disabledButton]} disabled>
-                  <Text style={styles.buttonText}>Đã xác nhận</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -143,32 +142,9 @@ const StatusScreen = () => {
         ListEmptyComponent={
           <Text style={styles.emptyText}>Không có phòng nào.</Text>
         }
-        contentContainerStyle={{paddingBottom: 20}}
       />
     </View>
   );
-};
-
-const getStatusLabel = (status: BookingStatus) => {
-  switch (status) {
-    case 'pending':
-      return 'Đang chờ xác nhận';
-    case 'confirmed':
-      return 'Đã xác nhận';
-    case 'cancelled':
-      return 'Đã hủy';
-  }
-};
-
-const getStatusStyle = (status: BookingStatus) => {
-  switch (status) {
-    case 'pending':
-      return {color: '#FFA500'};
-    case 'confirmed':
-      return {color: '#4CAF50'};
-    case 'cancelled':
-      return {color: '#F44336'};
-  }
 };
 
 const {width} = Dimensions.get('window');
@@ -179,12 +155,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
   },
   card: {
     backgroundColor: '#fff',
@@ -232,12 +202,6 @@ const styles = StyleSheet.create({
   rebookButton: {
     marginTop: 10,
     backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 8,
-  },
-  disabledButton: {
-    marginTop: 10,
-    backgroundColor: '#BDBDBD',
     padding: 10,
     borderRadius: 8,
   },
